@@ -50,8 +50,9 @@ def findTime(region):
             hour = 12
         
         hour = str(hour)
+        minute = str(minute)
         if len(minute) == 1:
-            minute = "0" + str(minute)
+            minute = "0" + minute
 
         response = "It is " + hour + ":" + minute + AMPM + " in " + area
     return response
