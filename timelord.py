@@ -12,34 +12,51 @@ BOT_ID = os.environ.get("BOT_ID")
 
 # Constants.
 AT_BOT = "<@" + BOT_ID + ">"
-DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
-MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
+#MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+ORDINAL_NUM = ["1st", "2nd", "3rd", "4th", "5th", "6th", "7th", "8th", "9th", "10th", "11th", "12th", "13th", "14th", "15th", "16th", "17th", "18th", "19th", "20th", "21st", "22nd", "23rd", "24th", "25th", "26th", "27th", "28th", "29th", "30th", "31st"]
 
 # Instantiate Slack & Twilio clients.
 slack_client = SlackClient(os.environ.get('SLACK_BOT_TOKEN'))
 
-# Finds the time. Currently only records SF and Sydney.
-def findTime(region):
+# Finds the datetime. Currently only records SF and Sydney.
+def getDateTime(command):
+    command = command.split()
+    mode = None
+    modes = (["dt", "date", "time"])
+    if len(command) == 1:
+        mode = "time"
+    elif len(command) == 2:
+        mode, region = command
+
+    mode = mode.lower()
     region = region.lower()
+
+    # Colloquial terms for Sydney and SF.
     sf = set(["sf", "sanfran", "san francisco", "sanfrancisco", "america", "us"])
     syd = set(["syd", "sydney", "australia", "aus"])
 
-    response = ""
     dt = None
-    area = None
     if region in sf:
         dt = datetime.now(timezone('US/Pacific-New'))
-        area = "SF"
+        region = "San Francisco"
     elif region in syd:
         dt = datetime.now(timezone('Australia/Sydney'))
-        area = "Sydney"
+        region = "Sydney"
 
+    response = ""
     if dt == None:
         response = "Region is not defined yet."
+    elif mode not in modes:
+        response = "Mode does not exist. Check out '@timelord help'!"
     else:
         # Date and time variables.
         hour, minute = dt.hour, dt.minute
         day, month, year = dt.day, dt.month, dt.year
+
+        ordinalDay = ORDINAL_NUM[day-1]
+        calendarMonth, weekday = MONTHS[month-1], DAYS[dt.weekday()]
 
         # Process time.
         AMPM = "am"
@@ -48,13 +65,18 @@ def findTime(region):
             AMPM = "pm"
         if hour == 0:
             hour = 12
-        
-        hour = str(hour)
-        minute = str(minute)
-        if len(minute) == 1:
-            minute = "0" + minute
 
-        response = "It is " + hour + ":" + minute + AMPM + " in " + area
+        #Time response: It is 2:12am in Sydney
+        #Date response: It is Monday, 29th October in Sydney
+        #DT response: It is Monday, 29th October (2:12am) in Sydney
+        time = str(hour) + ":" + str(minute) + AMPM
+        date = weekday + ", " + ordinalDay + " " + month
+        if mode == "time":
+            response = "It is " + time + " in " + region
+        elif mode == "dt":
+            response = "It is " + date + " (" + time + ") in " + region
+        elif mode == "date":
+            response = "It is " + date + " in " + region
     return response
 
 
@@ -64,7 +86,10 @@ def findTime(region):
     returns back what it needs for clarification.
 """
 def handle_command(command, channel):
-    response = findTime(command)
+    response = ""
+    if command == "help":
+        response = "Current commands include:\n   {region}\n   time {region}\n   date {region}\n   dt {region}\n"
+    response = getDateTime(command)
     slack_client.api_call("chat.postMessage", channel=channel, text=response, as_user=True)
 
 
