@@ -48,8 +48,12 @@ def findTime(region):
             AMPM = "pm"
         if hour == 0:
             hour = 12
+        
+        hour = str(hour)
+        if len(minute) == 1:
+            minute = "0" + str(minute)
 
-        response = "It is " + str(hour) + ":" + str(minute) + AMPM + " in " + area
+        response = "It is " + hour + ":" + minute + AMPM + " in " + area
     return response
 
 
