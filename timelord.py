@@ -27,6 +27,7 @@ def getDateTime(command):
     modes = (["dt", "date", "time"])
     if len(command) == 1:
         mode = "time"
+        region = command[0]
     elif len(command) == 2:
         mode, region = command
 
@@ -65,12 +66,17 @@ def getDateTime(command):
             AMPM = "pm"
         if hour == 0:
             hour = 12
-
+        
+        hour = str(hour)
+        minute = str(minute)
+        if len(minute) == 1:
+            minute = "0" + minute
+        
         #Time response: It is 2:12am in Sydney
         #Date response: It is Monday, 29th October in Sydney
         #DT response: It is Monday, 29th October (2:12am) in Sydney
         time = str(hour) + ":" + str(minute) + AMPM
-        date = weekday + ", " + ordinalDay + " " + month
+        date = weekday + ", " + ordinalDay + " " + calendarMonth
         if mode == "time":
             response = "It is " + time + " in " + region
         elif mode == "dt":
@@ -88,8 +94,9 @@ def getDateTime(command):
 def handle_command(command, channel):
     response = ""
     if command == "help":
-        response = "Current commands include:\n   {region}\n   time {region}\n   date {region}\n   dt {region}\n"
-    response = getDateTime(command)
+        response = "Current commands include:\n   @timelord {region}\n   @timelord time {region}\n   @timelord date {region}\n   @timelord dt {region}\n"
+    else:
+        response= getDateTime(command)
     slack_client.api_call("chat.postMessage", channel=channel, text=response, as_user=True)
 
 
