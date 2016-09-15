@@ -21,7 +21,7 @@ ORDINAL_NUM = ["1st", "2nd", "3rd", "4th", "5th", "6th", "7th", "8th", "9th", "1
 # Instantiate Slack & Twilio clients.
 slack_client = SlackClient(os.environ.get('SLACK_BOT_TOKEN'))
 
-# Load regions to timezones mapping.
+# Load regions=>timezones map.
 regionsToTimezonesMap = {}
 f = open("regionsToTimezones.txt", "r")
 for line in f:
@@ -45,11 +45,10 @@ def capitaliseRegionNames(region):
         regionName[i] = element[:start] + element[start].upper() + element[start+1:]
     return " ".join(regionName)
 
-# Finds the datetime. Currently only records SF and Sydney.
+# Given a command (action word, region), the function finds the datetime,
 def getDateTime(command):
     command = command.rstrip().split()
-    mode, region = command[0], " ".join(command[1:])
-    mode = mode.lower()
+    mode, region = command[0].lower(), " ".join(command[1:])
     region = region.lower()
 
     # Colloquial terms for Sydney and SF.
@@ -70,14 +69,12 @@ def getDateTime(command):
 
     response = ""
     if dt == None:
-        response = "I'm sorry. I'm so sorry. Region is not defined yet."
+        response = "I'm sorry. I'm so sorry. Region is undefined."
     else:
         # Date and time variables.
         hour, minute = dt.hour, dt.minute
         day, month, year = dt.day, dt.month, dt.year
-
-        ordinalDay = ORDINAL_NUM[day-1]
-        calendarMonth, weekday = MONTHS[month-1], DAYS[dt.weekday()]
+        calendarMonth, weekday, ordinalDay = MONTHS[month-1], DAYS[dt.weekday()], ORDINAL_NUM[day-1]
 
         # Process time.
         AMPM = "am"
@@ -92,9 +89,9 @@ def getDateTime(command):
         if len(minute) == 1:
             minute = "0" + minute
         
-        #Time response: It is Monday, 2:12am in Sydney
-        #Date response: It is Monday, 29th October in Sydney
-        #DT response: It is Monday, 29th October (2:12am) in Sydney
+        #Time response: It is Monday, 2:12am in Sydney!
+        #Date response: It is Monday, 29th October in Sydney!
+        #DT response: It is Monday, 29th October (2:12am) in Sydney!
         time = str(hour) + ":" + str(minute) + AMPM
         date = weekday + ", " + ordinalDay + " " + calendarMonth
         if mode == "time":
