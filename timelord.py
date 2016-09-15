@@ -51,18 +51,8 @@ def getDateTime(command):
     mode, region = command[0].lower(), " ".join(command[1:])
     region = region.lower()
 
-    # Colloquial terms for Sydney and SF.
-    sf = set(["sf", "sanfran", "san francisco", "sanfrancisco", "america", "us"])
-    syd = set(["syd", "sydney", "australia", "aus"])
-
     dt = None
-    if region in sf:
-        dt = datetime.now(timezone('US/Pacific-New'))
-        region = "San Francisco"
-    elif region in syd:
-        dt = datetime.now(timezone('Australia/Sydney'))
-        region = "Sydney"
-    elif region in regionsToTimezonesMap:
+    if region in regionsToTimezonesMap:
         zone = regionsToTimezonesMap[region]
         dt = datetime.now(timezone(zone))
         region = capitaliseRegionNames(region)
@@ -110,15 +100,26 @@ def getDateTime(command):
 """
 def handle_command(command, channel):
     response = ""
-    modes = set(["dt", "date", "time"])
     splitCommand = command.split()
     lowercaseCommand = command.lower()
+
+    modes = set(["dt", "date", "time"])
+
+    # Colloquial terms for Sydney and SF.
+    sf = set(["sf", "sanfran", "san francisco", "sanfrancisco", "america", "us"])
+    syd = set(["syd", "sydney", "australia", "aus"]) 
+
     if splitCommand[0] == "help":
         response = "Current commands include:\n   @timelord {region}\n   @timelord time {region}\n   @timelord date {region}\n   @timelord dt {region}\n"
     elif splitCommand[0] in modes:
         response = getDateTime(command)
-    elif lowercaseCommand in regionsToTimezonesMap:   #if command is a country
-        command = "time " + command 
+    elif lowercaseCommand in regionsToTimezonesMap or lowercaseCommand in syd or lowercaseCommand in sf:   #if command is a country
+        if lowercaseCommand in regionsToTimezonesMap:
+            command = "time " + command
+        elif lowercaseCommand in syd:
+            command = "time sydney"
+        else:
+            command = "time san francisco"
         response = getDateTime(command)
     else:
         catchphrases = ["Nonsense", "When I say run, run.", "Reverse the polarity of the neutron flow..", "Would you like a jelly baby?", "Sorry, I must dash!", "I wonder...", "Fine.", "Probably not the one you expected.", "No more!", "Fantastic!", "Allons-y!", "Geronimo!"]
