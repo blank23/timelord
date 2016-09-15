@@ -1,10 +1,11 @@
 import os
-import time
 from slackclient import SlackClient
 
+import time
 from datetime import datetime
 from pytz import timezone
 
+import random
 
 # Timelord's details.
 BOT_NAME = "timelord"
@@ -20,17 +21,34 @@ ORDINAL_NUM = ["1st", "2nd", "3rd", "4th", "5th", "6th", "7th", "8th", "9th", "1
 # Instantiate Slack & Twilio clients.
 slack_client = SlackClient(os.environ.get('SLACK_BOT_TOKEN'))
 
+# Load regions to timezones mapping.
+regionsToTimezonesMap = {}
+f = open("regionsToTimezones.txt", "r")
+for line in f:
+    region, zone = line.rstrip().split(",")
+    region = region.lower()
+    regionsToTimezonesMap[region] = zone 
+f.close()
+
+# Capitalise region names.
+def capitaliseRegionNames(region):
+    regionName = region.split()
+    doNotCapitalise = set(["of", "es"])
+    for i in xrange(len(regionName)):		# for word in name
+        if regionName[i] in doNotCapitalise:
+             continue
+        
+        start = 0				# for letter in word
+        element = regionName[i]
+        if element[start] == "(":
+             start = 1
+        regionName[i] = element[:start] + element[start].upper() + element[start+1:]
+    return " ".join(regionName)
+
 # Finds the datetime. Currently only records SF and Sydney.
 def getDateTime(command):
-    command = command.split()
-    mode = None
-    modes = (["dt", "date", "time"])
-    if len(command) == 1:
-        mode = "time"
-        region = command[0]
-    elif len(command) == 2:
-        mode, region = command
-
+    command = command.rstrip().split()
+    mode, region = command[0], " ".join(command[1:])
     mode = mode.lower()
     region = region.lower()
 
@@ -45,12 +63,14 @@ def getDateTime(command):
     elif region in syd:
         dt = datetime.now(timezone('Australia/Sydney'))
         region = "Sydney"
+    elif region in regionsToTimezonesMap:
+        zone = regionsToTimezonesMap[region]
+        dt = datetime.now(timezone(zone))
+        region = capitaliseRegionNames(region)
 
     response = ""
     if dt == None:
-        response = "Region is not defined yet."
-    elif mode not in modes:
-        response = "Mode does not exist. Check out '@timelord help'!"
+        response = "I'm sorry. I'm so sorry. Region is not defined yet."
     else:
         # Date and time variables.
         hour, minute = dt.hour, dt.minute
@@ -72,17 +92,17 @@ def getDateTime(command):
         if len(minute) == 1:
             minute = "0" + minute
         
-        #Time response: It is 2:12am in Sydney
+        #Time response: It is Monday, 2:12am in Sydney
         #Date response: It is Monday, 29th October in Sydney
         #DT response: It is Monday, 29th October (2:12am) in Sydney
         time = str(hour) + ":" + str(minute) + AMPM
         date = weekday + ", " + ordinalDay + " " + calendarMonth
         if mode == "time":
-            response = "It is " + time + " in " + region
+            response = "It is " + weekday + ", " + time + " in " + region + "!"
         elif mode == "dt":
-            response = "It is " + date + " (" + time + ") in " + region
+            response = "It is " + date + " (" + time + ") in " + region + "!"
         elif mode == "date":
-            response = "It is " + date + " in " + region
+            response = "It is " + date + " in " + region + "!"
     return response
 
 
@@ -93,10 +113,20 @@ def getDateTime(command):
 """
 def handle_command(command, channel):
     response = ""
-    if command == "help":
+    modes = set(["dt", "date", "time"])
+    splitCommand = command.split()
+    lowercaseCommand = command.lower()
+    if splitCommand[0] == "help":
         response = "Current commands include:\n   @timelord {region}\n   @timelord time {region}\n   @timelord date {region}\n   @timelord dt {region}\n"
+    elif splitCommand[0] in modes:
+        response = getDateTime(command)
+    elif lowercaseCommand in regionsToTimezonesMap:   #if command is a country
+        command = "time " + command 
+        response = getDateTime(command)
     else:
-        response= getDateTime(command)
+        catchphrases = ["Nonsense", "When I say run, run.", "Reverse the polarity of the neutron flow..", "Would you like a jelly baby?", "Sorry, I must dash!", "I wonder...", "Fine.", "Probably not the one you expected.", "No more!", "Fantastic!", "Allons-y!", "Geronimo!"]
+        randomNumber = random.randint(0, len(catchphrases)-1)
+        response = catchphrases[randomNumber]
     slack_client.api_call("chat.postMessage", channel=channel, text=response, as_user=True)
 
 
