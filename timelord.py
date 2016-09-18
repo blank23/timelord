@@ -118,18 +118,20 @@ def handle_command(command, channel):
         elif region in syd:
             command = splitCommand[0] + " sydney"
         response = getDateTime(command)
-    elif lowercaseCommand in regionsToTimezonesMap or lowercaseCommand in syd or lowercaseCommand in sf:   #if command is a country
+    else:
         if lowercaseCommand in regionsToTimezonesMap:
             command = "time " + command
+            response = getDateTime(command)
         elif lowercaseCommand in syd:
             command = "time sydney"
-        else:
+            response = getDateTime(command)
+        elif lowercaseCommand in sf:
             command = "time san francisco"
-        response = getDateTime(command)
-    else:
-        catchphrases = ["Nonsense", "When I say run, run.", "Reverse the polarity of the neutron flow..", "Would you like a jelly baby?", "Sorry, I must dash!", "I wonder...", "Fine.", "Probably not the one you expected.", "No more!", "Fantastic!", "Allons-y!", "Geronimo!"]
-        randomNumber = random.randint(0, len(catchphrases)-1)
-        response = catchphrases[randomNumber]
+            response = getDateTime(command)
+        else:
+            catchphrases = ["Nonsense", "When I say run, run.", "Reverse the polarity of the neutron flow..", "Would you like a jelly baby?", "Sorry, I must dash!", "I wonder...", "Fine.", "Probably not the one you expected.", "No more!", "Fantastic!", "Allons-y!", "Geronimo!"]
+            randomNumber = random.randint(0, len(catchphrases)-1)
+            response = catchphrases[randomNumber]
     slack_client.api_call("chat.postMessage", channel=channel, text=response, as_user=True)
 
 
