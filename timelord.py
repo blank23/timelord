@@ -106,12 +106,17 @@ def handle_command(command, channel):
     modes = set(["dt", "date", "time"])
 
     # Colloquial terms for Sydney and SF.
-    sf = set(["sf", "sanfran", "san francisco", "sanfrancisco", "america", "us"])
+    sf = set(["sf", "sanfran", "san fran", "san francisco", "sanfrancisco", "america", "us"])
     syd = set(["syd", "sydney", "australia", "aus"]) 
 
     if splitCommand[0] == "help":
         response = "Current commands include:\n   @timelord {region}\n   @timelord time {region}\n   @timelord date {region}\n   @timelord dt {region}\n"
     elif splitCommand[0] in modes:
+        region = " ".join(splitCommand[1:])
+        if region in sf:
+            command = splitCommand[0] + " san francisco"
+        elif region in syd:
+            command = splitCommand[0] + " sydney"
         response = getDateTime(command)
     elif lowercaseCommand in regionsToTimezonesMap or lowercaseCommand in syd or lowercaseCommand in sf:   #if command is a country
         if lowercaseCommand in regionsToTimezonesMap:
