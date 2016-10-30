@@ -1,3 +1,5 @@
+#!/usr/bin/python
+
 import os
 import random
 import time
@@ -8,9 +10,14 @@ from pytz import timezone
 from slackclient import SlackClient
 
 
+BOT_ID=""
+SLACK_BOT_TOKEN=""
+with open ("/root/projects/timelord/.bot_tokens", "r") as f:
+	BOT_ID = f.readline().rstrip()
+	SLACK_BOT_TOKEN = f.readline().rstrip()
+
 # Timelord's details.
 BOT_NAME = "timelord"
-BOT_ID = os.environ.get("BOT_ID")
 
 # Constants.
 AT_BOT = "<@" + BOT_ID + ">"
@@ -27,7 +34,7 @@ ORDINAL_NUM = ["1st", "2nd", "3rd", "4th", "5th", "6th", "7th", "8th", "9th",
 
 
 # Instantiate Slack & Twilio clients.
-slack_client = SlackClient(os.environ.get('SLACK_BOT_TOKEN'))
+slack_client = SlackClient(SLACK_BOT_TOKEN)
 
 # Load regions=>timezones map.
 regionsToTimezonesMap = {}
@@ -119,30 +126,37 @@ def handle_command(command, channel):
     modes = set(["dt", "date", "time"])
 
     # Colloquial terms for Sydney and SF.
-    sf = set(["sf", "sanfran", "san francisco", "sanfrancisco", "america", "us"])
+    sf = set(["sf", "sanfran", "san fran", "san francisco", "sanfrancisco", "america", "us"])
     syd = set(["syd", "sydney", "australia", "aus"]) 
 
     if splitCommand[0] == "help":
         response = "Current commands include:\n   @timelord {region}\n   @timelord time {region}\n   @timelord date {region}\n   @timelord dt {region}\n"
     elif splitCommand[0] in modes:
-        response = getDateTime(command)
-    elif lowercaseCommand in regionsToTimezonesMap or lowercaseCommand in syd or lowercaseCommand in sf:   #if command is a country
-        if lowercaseCommand in regionsToTimezonesMap:
-            command = "time " + command
-        elif lowercaseCommand in syd:
-            command = "time sydney"
-        else:
-            command = "time san francisco"
+        region = " ".join(splitCommand[1:])
+        if region in sf:
+            command = splitCommand[0] + " san francisco"
+        elif region in syd:
+            command = splitCommand[0] + " sydney"
         response = getDateTime(command)
     else:
-        catchphrases = ["Nonsense", "When I say run, run.", 
-                        "Reverse the polarity of the neutron flow..", 
-                        "Would you like a jelly baby?", "Sorry, I must dash!",
-                        "I wonder...", "Fine.", 
-                        "Probably not the one you expected.", "No more!", 
-                        "Fantastic!", "Allons-y!", "Geronimo!"]
-        randomNumber = random.randint(0, len(catchphrases)-1)
-        response = catchphrases[randomNumber]
+        if lowercaseCommand in regionsToTimezonesMap:
+            command = "time " + command
+            response = getDateTime(command)
+        elif lowercaseCommand in syd:
+            command = "time sydney"
+            response = getDateTime(command)
+        elif lowercaseCommand in sf:
+            command = "time san francisco"
+            response = getDateTime(command)
+        else:
+            catchphrases = ["Nonsense", "When I say run, run.", 
+                            "Reverse the polarity of the neutron flow..", 
+                            "Would you like a jelly baby?", "Sorry, I must dash!",
+                            "I wonder...", "Fine.", 
+                            "Probably not the one you expected.", "No more!", 
+                            "Fantastic!", "Allons-y!", "Geronimo!"]
+            randomNumber = random.randint(0, len(catchphrases)-1)
+            response = catchphrases[randomNumber]
     slack_client.api_call("chat.postMessage", channel=channel, text=response, as_user=True)
 
 
