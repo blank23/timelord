@@ -239,6 +239,7 @@ philadelphia,US/Eastern
 phnom penh,Asia/Phnom_Penh
 phoenix,America/Phoenix
 pierre,US/Central
+pittsburgh,US/Eastern
 podgorica,Europe/Podgorica
 pontianak,Asia/Pontianak
 port moresby,Pacific/Port_Moresby

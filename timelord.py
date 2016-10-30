@@ -1,3 +1,5 @@
+#!/usr/bin/python
+
 import os
 from slackclient import SlackClient
 
@@ -7,9 +9,14 @@ from pytz import timezone
 
 import random
 
+BOT_ID=""
+SLACK_BOT_TOKEN=""
+with open ("/root/projects/timelord/.bot_tokens", "r") as f:
+	BOT_ID = f.readline().rstrip()
+	SLACK_BOT_TOKEN = f.readline().rstrip()
+
 # Timelord's details.
 BOT_NAME = "timelord"
-BOT_ID = os.environ.get("BOT_ID")
 
 # Constants.
 AT_BOT = "<@" + BOT_ID + ">"
@@ -19,11 +26,11 @@ MONTHS = ["January", "February", "March", "April", "May", "June", "July", "Augus
 ORDINAL_NUM = ["1st", "2nd", "3rd", "4th", "5th", "6th", "7th", "8th", "9th", "10th", "11th", "12th", "13th", "14th", "15th", "16th", "17th", "18th", "19th", "20th", "21st", "22nd", "23rd", "24th", "25th", "26th", "27th", "28th", "29th", "30th", "31st"]
 
 # Instantiate Slack & Twilio clients.
-slack_client = SlackClient(os.environ.get('SLACK_BOT_TOKEN'))
+slack_client = SlackClient(SLACK_BOT_TOKEN)
 
 # Load regions=>timezones map.
 regionsToTimezonesMap = {}
-f = open("regionsToTimezones.txt", "r")
+f = open("/root/projects/timelord/regionsToTimezones.txt", "r")
 for line in f:
     region, zone = line.rstrip().split(",")
     region = region.lower()

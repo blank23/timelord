@@ -1,3 +1,5 @@
 #!/bin/sh
 
-ps aux | grep 'python timelord.py' | grep -v 'grep' || python timelord.py &
+ps aux | grep 'timelord.py' | grep -v 'grep' && exit
+cd /root/projects/timelord
+/usr/bin/python timelord.py &
