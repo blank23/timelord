@@ -1,11 +1,12 @@
 import os
-from slackclient import SlackClient
-
+import random
 import time
+
 from datetime import datetime
 from pytz import timezone
 
-import random
+from slackclient import SlackClient
+
 
 # Timelord's details.
 BOT_NAME = "timelord"
@@ -13,25 +14,34 @@ BOT_ID = os.environ.get("BOT_ID")
 
 # Constants.
 AT_BOT = "<@" + BOT_ID + ">"
-DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
-MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
-#MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
-ORDINAL_NUM = ["1st", "2nd", "3rd", "4th", "5th", "6th", "7th", "8th", "9th", "10th", "11th", "12th", "13th", "14th", "15th", "16th", "17th", "18th", "19th", "20th", "21st", "22nd", "23rd", "24th", "25th", "26th", "27th", "28th", "29th", "30th", "31st"]
+DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday",
+    "Sunday"]
+MONTHS = ["January", "February", "March", "April", "May", "June", "July",
+    "August", "September", "October", "November", "December"]
+#MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep",
+    "Oct", "Nov", "Dec"]
+ORDINAL_NUM = ["1st", "2nd", "3rd", "4th", "5th", "6th", "7th", "8th", "9th",
+    "10th", "11th", "12th", "13th", "14th", "15th", "16th", "17th",
+    "18th", "19th", "20th", "21st", "22nd", "23rd", "24th", "25th",
+    "26th", "27th", "28th", "29th", "30th", "31st"]
+
 
 # Instantiate Slack & Twilio clients.
 slack_client = SlackClient(os.environ.get('SLACK_BOT_TOKEN'))
 
 # Load regions=>timezones map.
 regionsToTimezonesMap = {}
-f = open("regionsToTimezones.txt", "r")
-for line in f:
-    region, zone = line.rstrip().split(",")
-    region = region.lower()
-    regionsToTimezonesMap[region] = zone 
-f.close()
+with open("regionsToTimezones.txt", "r") as f:
+  for line in f:
+      region, zone = line.rstrip().split(",")
+      region = region.lower()
+      regionsToTimezonesMap[region] = zone 
 
-# Capitalise region names.
+
 def capitaliseRegionNames(region):
+    """
+    Capitalise region names.
+    """
     regionName = region.split()
     doNotCapitalise = set(["of", "es"])
     for i in xrange(len(regionName)):		# for word in name
@@ -45,8 +55,11 @@ def capitaliseRegionNames(region):
         regionName[i] = element[:start] + element[start].upper() + element[start+1:]
     return " ".join(regionName)
 
-# Given a command (action word, region), the function finds the datetime,
+
 def getDateTime(command):
+    """
+    Given a command (action word, region), the function finds the datetime
+    """
     command = command.rstrip().split()
     mode, region = command[0].lower(), " ".join(command[1:])
     region = region.lower()
@@ -93,12 +106,12 @@ def getDateTime(command):
     return response
 
 
-"""
+def handle_command(command, channel):
+    """
     Receives commands directed at the bot and determines if they
     are valid commands. If so, then acts on the commands. If not,
     returns back what it needs for clarification.
-"""
-def handle_command(command, channel):
+    """
     response = ""
     splitCommand = command.split()
     lowercaseCommand = command.lower()
@@ -122,18 +135,23 @@ def handle_command(command, channel):
             command = "time san francisco"
         response = getDateTime(command)
     else:
-        catchphrases = ["Nonsense", "When I say run, run.", "Reverse the polarity of the neutron flow..", "Would you like a jelly baby?", "Sorry, I must dash!", "I wonder...", "Fine.", "Probably not the one you expected.", "No more!", "Fantastic!", "Allons-y!", "Geronimo!"]
+        catchphrases = ["Nonsense", "When I say run, run.", 
+                        "Reverse the polarity of the neutron flow..", 
+                        "Would you like a jelly baby?", "Sorry, I must dash!",
+                        "I wonder...", "Fine.", 
+                        "Probably not the one you expected.", "No more!", 
+                        "Fantastic!", "Allons-y!", "Geronimo!"]
         randomNumber = random.randint(0, len(catchphrases)-1)
         response = catchphrases[randomNumber]
     slack_client.api_call("chat.postMessage", channel=channel, text=response, as_user=True)
 
 
-"""
+def parse_slack_output(slack_rtm_output):
+    """
     The Slack Real Time Messaging API is an events firehose.
     this parsing function returns None unless a message is
     directed at the Bot, based on its ID.
-"""
-def parse_slack_output(slack_rtm_output):
+    """
     output_list = slack_rtm_output
     if output_list and len(output_list) > 0:
         for output in output_list:
